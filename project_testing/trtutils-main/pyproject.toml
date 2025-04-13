@@ -1,0 +1,204 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trtutils"
+version = "0.4.1"
+authors = [
+  {name="Justin Davis", email="davisjustin302@gmail.com"},
+]
+maintainers = [
+  {name="Justin Davis", email="davisjustin302@gmail.com"},
+]
+description = "Utilities for making TensorRT easier to use"
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Natural Language :: English",
+    "Topic :: System :: Hardware",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Embedded Systems",
+    "Topic :: Software Development :: Libraries",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Intended Audience :: End Users/Desktop",
+    "Typing :: Typed",
+]
+requires-python=">=3.8, <=3.14"
+dependencies = [
+    "tensorrt>=8.0.0",
+    "cuda-python>=8.0.0",
+    "numpy>=1.19.0,<2.2.0",
+    "cv2ext>=0.1.0",
+    "opencv-python>=4.8.0",
+    "tqdm>=4.67.1",
+    "typing_extensions>=4.0.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/justincdavis/trtutils"
+"Bug Tracker" = "https://github.com/justincdavis/trtutils/issues"
+
+[project.optional-dependencies]
+all = [
+    "trtutils[jetson]",
+]
+jetson = [
+    "jetsontools>=0.0.4",
+]
+ci = [
+    "ruff>=0.11.2",
+    "mypy>=1.15.0",
+    "types-tqdm>=4.67",
+]
+test = [
+    "pytest>=6.2.0",
+]
+docs = [
+    "sphinx>=7.0.0",
+    "sphinx_design>=0.6.1",
+    "furo>=2024.8.6",
+    "myst_parser>=4.0.0",
+]
+dev = [
+    "trtutils[ci]",
+    "trtutils[test]",
+    "trtutils[docs]",
+    "twine>=4.0.0",
+    "wheel>=0.37.0",
+    "bumpver>=2023.1126",
+    "pyclean>=2.7.0",
+    "pyright>=1.1.348",
+]
+
+[tool.bumpver]
+current_version = "0.4.1"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message  = "Bump version {old_version} -> {new_version}"
+commit          = true
+tag             = true
+push            = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = ['current_version = "{version}"', 'version = "{version}"']
+"src/trtutils/__init__.py" = ["{version}"]
+"docs/conf.py" = ["{version}"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+trtutils = ["src/*.cu", "src/trtutils/py.typed"]
+
+[tool.ruff]
+fix = true
+show-fixes = true
+# Same as Black.
+line-length = 88
+# Assume Python 3.8
+target-version = "py38"
+# Other options
+builtins = ["_"]
+
+[tool.ruff.lint]
+select = ["ALL", "PLR2004"]
+ignore = ["PLR", "C901", "E501", "D203", "D212", "ERA", "COM812"]
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+per-file-ignores = {}
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.mypy]
+python_version = "3.8"
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = false
+strict_equality = true
+check_untyped_defs = true
+disallow_subclassing_any = false
+disallow_untyped_decorators = true
+disallow_any_generics = false
+disallow_untyped_calls = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+no_implicit_reexport = true
+warn_return_any = true
+
+# # set stub directory
+# mypy_path = "$MYPY_CONFIG_FILE_DIR/typings"
+
+[[tool.mypy.overrides]]
+module = [  
+    'tensorrt',
+    'pycuda',
+    'cuda',
+]
+ignore_errors = true
+
+[tool.pyright]
+include = ["src"]
+exclude = ["**/node_modules",
+    "**/__pycache__",
+]
+
+ignore = ["scripts/*"]
+
+defineConstant = {DEBUG = true}
+stubPath = "typings"
+reportMissingImports = true
+reportMissingTypeStubs = false
+  
+pythonVersion = "3.8"
+pythonPlatform = "Linux"
+
+executionEnvironments = [
+    { root = "src", pythonVersion = "3.8", stubPath = "typings" },
+]

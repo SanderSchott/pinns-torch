@@ -171,3 +171,5 @@ misc
 # project checkpoints and output files
 /project_testing/lightning_logs*
 /project_testing/out*
+/project_testing/power.csv
+*.out

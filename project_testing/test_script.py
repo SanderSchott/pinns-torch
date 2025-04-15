@@ -6,10 +6,10 @@ from pathlib import Path
 from jetsontools import Tegrastats, get_powerdraw, parse_tegrastats, filter_data
 
 
-example_path = Path("output.txt")
+example_path = Path("tegra-out.out")
 
-interval = 5  # sample every 5 ms
-duration = 5  # 5 seconds of sampling
+interval = 5  # sample every 1 ms
+duration = 160  # 160 seconds of sampling
 timestamps: list[tuple[float, float]] = []
 
 t0 = time.time()
@@ -41,5 +41,9 @@ filtered, _ = filter_data(output, timestamps)
 
 # parse the energy
 energy_data = get_powerdraw(filtered)
-for mname, metric in energy_data.items():
-    print(f"{mname}: {metric.mean} mW")
+
+with open("power.csv", "w") as f:
+    f.write('\n'.join(str(v) for v in energy_data["VDD_TOTAL"].raw))
+
+# for mname, metric in energy_data.items():
+#     print(f"{mname}: {metric.mean} mW")

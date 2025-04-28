@@ -8,7 +8,7 @@ from jetsontools import Tegrastats, get_powerdraw, parse_tegrastats, filter_data
 
 example_path = Path("tegra-out.out")
 
-interval = 5  # sample every 1 ms
+interval = 5  # sample every 5 ms
 duration = 160  # 160 seconds of sampling
 timestamps: list[tuple[float, float]] = []
 

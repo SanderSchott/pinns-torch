@@ -10,6 +10,7 @@ from torch import nn
 from lightning import LightningModule
 from typing import Dict, Tuple, List, Any, Union
 
+
 class FCNLightning(LightningModule):
     def __init__(
         self,
@@ -81,16 +82,18 @@ class FCNLightning(LightningModule):
             }
         return {"optimizer": opt}
 
+
 load_from_checkpoint = True
 run_pinn = False
 
-dnn_ckpt = '20000_epochs_dnn.ckpt'
-pinn_ckpt = '20000_epochs_run.ckpt'
+dnn_ckpt = "20000_epochs_dnn.ckpt"
+pinn_ckpt = "20000_epochs_run.ckpt"
 
 if run_pinn:
     checkpoint = pinn_ckpt
 else:
     checkpoint = dnn_ckpt
+
 
 def read_data_fn(root_path):
     """Read and preprocess data from the specified root path.
@@ -101,56 +104,52 @@ def read_data_fn(root_path):
 
     data = pinnstorch.utils.load_data(root_path, "NLS.mat")
     exact = data["uu"]
-    exact_u = np.real(exact) # N x T
-    exact_v = np.imag(exact) # N x T
-    exact_h = np.sqrt(exact_u**2 + exact_v**2) # N x T
+    exact_u = np.real(exact)  # N x T
+    exact_v = np.imag(exact)  # N x T
+    exact_h = np.sqrt(exact_u**2 + exact_v**2)  # N x T
     return {"u": exact_u, "v": exact_v, "h": exact_h}
 
-time_domain = pinnstorch.data.TimeDomain(t_interval=[0, 1.57079633], t_points = 201)
-spatial_domain = pinnstorch.data.Interval(x_interval= [-5, 4.9609375], shape = [256, 1])
 
-mesh = pinnstorch.data.Mesh(root_dir='/home/sschott/CSCI582-Final-Project/pinns-torch/data',
-                            read_data_fn=read_data_fn,
-                            spatial_domain = spatial_domain,
-                            time_domain = time_domain)
+time_domain = pinnstorch.data.TimeDomain(t_interval=[0, 1.57079633], t_points=201)
+spatial_domain = pinnstorch.data.Interval(x_interval=[-5, 4.9609375], shape=[256, 1])
+
+mesh = pinnstorch.data.Mesh(
+    root_dir="/Users/sanderschott/Coding-Workspace/CSCI582-Computing_Beyond_CPUs/pinns-torch/data",
+    read_data_fn=read_data_fn,
+    spatial_domain=spatial_domain,
+    time_domain=time_domain,
+)
 
 N0 = 50
 
-in_c = pinnstorch.data.InitialCondition(mesh = mesh,
-                                        num_sample = N0,
-                                        solution = ['u', 'v'])
+in_c = pinnstorch.data.InitialCondition(mesh=mesh, num_sample=N0, solution=["u", "v"])
 
 N_b = 50
-pe_b = pinnstorch.data.PeriodicBoundaryCondition(mesh = mesh,
-                                                 num_sample = N_b,
-                                                 derivative_order = 1,
-                                                 solution = ['u', 'v'])
+pe_b = pinnstorch.data.PeriodicBoundaryCondition(
+    mesh=mesh, num_sample=N_b, derivative_order=1, solution=["u", "v"]
+)
 
 N_f = 20000
-me_s = pinnstorch.data.MeshSampler(mesh = mesh,
-                                   num_sample = N_f,
-                                   collection_points = ['f_v', 'f_u'])
+me_s = pinnstorch.data.MeshSampler(
+    mesh=mesh, num_sample=N_f, collection_points=["f_v", "f_u"]
+)
 
-val_s = pinnstorch.data.MeshSampler(mesh = mesh,
-                                    solution = ['u', 'v', 'h'])
+val_s = pinnstorch.data.MeshSampler(mesh=mesh, solution=["u", "v", "h"])
 
-net = pinnstorch.models.FCN(layers = [2, 100, 100, 100, 100, 2],
-                            output_names = ['u', 'v'],
-                            lb=mesh.lb,
-                            ub=mesh.ub)
+net = pinnstorch.models.FCN(
+    layers=[2, 100, 100, 100, 100, 2], output_names=["u", "v"], lb=mesh.lb, ub=mesh.ub
+)
 
-def output_fn(outputs: Dict[str, torch.Tensor],
-              x: torch.Tensor,
-              t: torch.Tensor):
+
+def output_fn(outputs: Dict[str, torch.Tensor], x: torch.Tensor, t: torch.Tensor):
     """Define `output_fn` function that will be applied to outputs of net."""
 
     outputs["h"] = torch.sqrt(outputs["u"] ** 2 + outputs["v"] ** 2)
 
     return outputs
 
-def pde_fn(outputs: Dict[str, torch.Tensor],
-           x: torch.Tensor,
-           t: torch.Tensor):
+
+def pde_fn(outputs: Dict[str, torch.Tensor], x: torch.Tensor, t: torch.Tensor):
     """Define the partial differential equations (PDEs)."""
     u_x, u_t = pinnstorch.utils.gradient(outputs["u"], [x, t])
     v_x, v_t = pinnstorch.utils.gradient(outputs["v"], [x, t])
@@ -158,31 +157,39 @@ def pde_fn(outputs: Dict[str, torch.Tensor],
     u_xx = pinnstorch.utils.gradient(u_x, x)[0]
     v_xx = pinnstorch.utils.gradient(v_x, x)[0]
 
-    outputs["f_u"] = u_t + 0.5 * v_xx + (outputs["u"] ** 2 + outputs["v"] ** 2) * outputs["v"]
-    outputs["f_v"] = v_t - 0.5 * u_xx - (outputs["u"] ** 2 + outputs["v"] ** 2) * outputs["u"]
+    outputs["f_u"] = (
+        u_t + 0.5 * v_xx + (outputs["u"] ** 2 + outputs["v"] ** 2) * outputs["v"]
+    )
+    outputs["f_v"] = (
+        v_t - 0.5 * u_xx - (outputs["u"] ** 2 + outputs["v"] ** 2) * outputs["u"]
+    )
 
     return outputs
 
+
 train_datasets = [me_s, in_c, pe_b]
 val_dataset = val_s
-datamodule = pinnstorch.data.PINNDataModule(train_datasets = [me_s, in_c, pe_b],
-                                            val_dataset = val_dataset,
-                                            pred_dataset = val_s)
+datamodule = pinnstorch.data.PINNDataModule(
+    train_datasets=[me_s, in_c, pe_b], val_dataset=val_dataset, pred_dataset=val_s
+)
 
 if run_pinn:
-    model = pinnstorch.models.PINNModule(net = net,
-                                    pde_fn = pde_fn,
-                                    output_fn = output_fn,
-                                    loss_fn = 'mse')
+    model = pinnstorch.models.PINNModule(
+        net=net, pde_fn=pde_fn, output_fn=output_fn, loss_fn="mse"
+    )
 else:
     model = FCNLightning(fcn=net)
 
-trainer = pl.Trainer(accelerator='cpu', devices=1, max_epochs=20000)
+trainer = pl.Trainer(accelerator="mps", devices=-1, max_epochs=20000)
 
 if not load_from_checkpoint:
     trainer.fit(model=model, datamodule=datamodule)
 else:
-    trainer.fit(model=model, datamodule=datamodule, ckpt_path=f'/home/sschott/CSCI582-Final-Project/pinns-torch/project_testing/{checkpoint}')
+    trainer.fit(
+        model=model,
+        datamodule=datamodule,
+        ckpt_path=f"/Users/sanderschott/Coding-Workspace/CSCI582-Computing_Beyond_CPUs/pinns-torch/project_testing/{checkpoint}",
+    )
 
 collect_data = True
 if collect_data:

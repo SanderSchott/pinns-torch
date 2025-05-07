@@ -1,0 +1,13 @@
+Application,Datapoints,Trial_1,Trial_2,Trial_3
+DNN_gpu,20k,1:43.620,1:45.753,1:49.827
+DNN_gpu,15k,1:42.408,1:41.575,1:45.508
+DNN_gpu,10k,1:44.396,1:44.197,1:42.361
+DNN_cpu,20k,11:33.503
+DNN_cpu,15k,8:27.854,
+DNN_cpu,10k,8:16.840,8:18.849,8:8.391
+PINN_gpu,20k,
+PINN_gpu,15k,
+PINN_gpu,10k,
+PINN_cpu,20k,
+PINN_cpu,15k,
+PINN_cpu,10k,

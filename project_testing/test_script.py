@@ -9,7 +9,7 @@ from jetsontools import Tegrastats, get_powerdraw, parse_tegrastats, filter_data
 example_path = Path("tegra-out.out")
 
 interval = 5  # sample every 5 ms
-duration = 160  # 160 seconds of sampling
+duration = 500  # 500 seconds of sampling
 timestamps: list[tuple[float, float]] = []
 
 t0 = time.time()

@@ -1,3 +1,4 @@
 #!/bin/bash
 
-nsys profile -o test_report --stats=true --trace=cuda,osrt,nvtx --sample=cpu_host -- python3 test.py
+nsys profile --trace=cuda,osrt,nvtx --sample=process-tree --output=test_report python3 testing.py
+nsys stats test_report.nsys-rep

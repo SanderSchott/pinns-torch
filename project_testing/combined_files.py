@@ -29,4 +29,4 @@ def process_and_average_files(base_filename):
     averaged_df.to_csv(output_file, index=False)
     print(f"Averaged data saved to {output_file}")
 
-process_and_average_files("10k_dnn_cpu_power")
+process_and_average_files("10k_pinn_gpu_power")

@@ -1,53 +1,63 @@
 import pandas as pd
-
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+import os
 
-# Function to convert time strings (e.g., "1:43.620") to seconds
-def time_to_seconds(time_str):
-    minutes, seconds = map(float, time_str.split(':'))
-    return minutes * 60 + seconds
 
-# Read the CSV file
-file_path = './timing_results.csv'  # Replace with the actual path to your CSV file
-df = pd.read_csv(file_path)
+# 0) helper to parse either "M:SS.xxx" → seconds or pass through floats
+def parse_min_sec(x):
+    s = str(x)
+    if ":" not in s:
+        return float(s)
+    mins, secs = s.split(":", 1)
+    return int(mins) * 60 + float(secs)
 
-# Convert runtime columns to seconds and calculate the average runtime
-for trial in ['Trial_1', 'Trial_2', 'Trial_3']:
-    df[trial] = df[trial].apply(time_to_seconds)
-df['Average_Runtime'] = df[['Trial_1', 'Trial_2', 'Trial_3']].mean(axis=1)
 
-# Create a bar chart
-fig, ax = plt.subplots(figsize=(10, 6))
+# 1) Read in your CSV
+csv_path = "timing_results.csv"
+df = pd.read_csv(csv_path)
 
-# Group data by Datapoints and Application
-grouped = df.groupby(['Datapoints', 'Application'])
+# 2) Normalize the Datapoints column ("10k" → 10000)
+df["Datapoints"] = df["Datapoints"].str.rstrip("k").astype(int) * 1000
 
-# Prepare data for plotting
-datapoints = sorted(df['Datapoints'].unique(), key=lambda x: int(x[:-1]))  # Sort by numeric value
-applications = df['Application'].unique()
-colors = plt.cm.tab10(range(len(applications)))  # Generate distinct colors for applications
+# 3) Ensure trial columns are strings, then parse each into seconds
+time_cols = ["Trial_1", "Trial_2", "Trial_3"]
+df[time_cols] = df[time_cols].astype(str)
+for c in time_cols:
+    df[c] = df[c].apply(parse_min_sec)
 
-bar_width = 0.2
-x_indices = range(len(datapoints))
+# 4) Compute the average time per row
+df["AvgTime_s"] = df[time_cols].mean(axis=1)
 
-for i, app in enumerate(applications):
-    avg_runtimes = [
-        grouped.get_group((dp, app))['Average_Runtime'].values[0] if (dp, app) in grouped.groups else 0
-        for dp in datapoints
-    ]
-    x_positions = [x + i * bar_width for x in x_indices]
-    ax.bar(x_positions, avg_runtimes, bar_width, label=app, color=colors[i])
+# 5) Pivot so index=Datapoints, columns=Application, values=AvgTime_s
+pivot = df.pivot(index="Datapoints", columns="Application", values="AvgTime_s")
+pivot.columns = [app.replace("_", " on ").upper() for app in pivot.columns]
 
-# Customize the plot
-ax.set_title('Average Runtimes by Application and Datapoints')
-ax.set_xlabel('Datapoints')
-ax.set_ylabel('Average Runtime (seconds)')
-ax.set_xticks([x + (len(applications) - 1) * bar_width / 2 for x in x_indices])
-ax.set_xticklabels(datapoints)
-ax.legend(title='Application')
-ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f'{int(x // 60)}:{int(x % 60):02d}'))
+# 6) Plot grouped bar chart
+ax = pivot.plot(kind="bar", figsize=(10, 6), width=0.8, edgecolor="black")
 
-# Show the plot
+# 7) Annotate each bar with its height (rounded to 2 decimals)
+for bar in ax.patches:
+    height = bar.get_height()
+    ax.text(
+        bar.get_x() + bar.get_width() / 2,  # x position = center of bar
+        height,  # y position = top of bar
+        f"{height:.2f}",  # label = height
+        ha="center",
+        va="bottom",
+        fontsize=10,
+    )
+
+# 8) Final formatting
+ax.set_xlabel("Number of datapoints", fontsize=12)
+ax.set_ylabel("Average time (s)", fontsize=12)
+ax.set_title("Average Run Time by Model & Hardware", fontsize=14, fontweight="bold")
+ax.set_xticklabels([f"{int(x):,}" for x in pivot.index], rotation=0)
+ax.legend(title="Configuration", bbox_to_anchor=(1.02, 1), loc="upper left")
+ax.grid(axis="y", linestyle="--", alpha=0.5)
+
 plt.tight_layout()
+
+# 9) Save & show
+out_png = os.path.join(os.path.dirname(csv_path), "timing_grouped.png")
+plt.savefig(out_png, dpi=300)
 plt.show()

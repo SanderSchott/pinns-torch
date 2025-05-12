@@ -114,7 +114,7 @@ time_domain = pinnstorch.data.TimeDomain(t_interval=[0, 1.57079633], t_points=20
 spatial_domain = pinnstorch.data.Interval(x_interval=[-5, 4.9609375], shape=[256, 1])
 
 mesh = pinnstorch.data.Mesh(
-    root_dir="/Users/sanderschott/Coding-Workspace/CSCI582-Computing_Beyond_CPUs/pinns-torch/data",
+    root_dir="/home/sschott/CSCI582-Final-Project/pinns-torch/data",
     read_data_fn=read_data_fn,
     spatial_domain=spatial_domain,
     time_domain=time_domain,
@@ -180,7 +180,7 @@ if run_pinn:
 else:
     model = FCNLightning(fcn=net)
 
-trainer = pl.Trainer(accelerator="mps", devices=-1, max_epochs=20000)
+trainer = pl.Trainer(accelerator="gpu", devices=-1, max_epochs=20000)
 
 if not load_from_checkpoint:
     trainer.fit(model=model, datamodule=datamodule)
@@ -188,14 +188,14 @@ else:
     trainer.fit(
         model=model,
         datamodule=datamodule,
-        ckpt_path=f"/Users/sanderschott/Coding-Workspace/CSCI582-Computing_Beyond_CPUs/pinns-torch/project_testing/{checkpoint}",
+        ckpt_path=f"/home/sschott/CSCI582-Final-Project/pinns-torch/project_testing/{checkpoint}",
     )
 
 collect_data = True
 if collect_data:
     # this is just so that we can run enough predicts to collect data
     # scale the number in the range below if you need it to run for longer or shorter
-    for _ in range(2000):
+    for _ in range(10):
         preds_list = trainer.predict(model=model, datamodule=datamodule)
 else:
     preds_list = trainer.predict(model=model, datamodule=datamodule)
